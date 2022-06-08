@@ -13,6 +13,7 @@ namespace ParserToolkit
             _value = value;
             End = position;
         }
+        public string Value => _value;
         public int Line { get; }
         public int Column { get; }
         public int Length => _value.Length;

@@ -11,21 +11,19 @@ namespace ParserToolkit
 {
     public abstract class LexerBase<TToken> where TToken : Enum
     {
-        private readonly StringReader _reader;
         private readonly string _input;
         private readonly List<Token<TToken>> _tokens = new List<Token<TToken>>();
         private readonly IList<string> _errors = new List<string>();
-        
+
         // = 0
         protected int Position { get; set; }
+        protected char Value { get; set; }
         protected int Line { get; set; } = 1;
         // = 0
         protected int Column { get; set; }
 
-
         protected LexerBase(string input)
         {
-            _reader = new StringReader(input);
             _input = input;
         }
 
@@ -88,7 +86,6 @@ namespace ParserToolkit
             while (!IsEndOfFile() && predicate(Peek()))
             {
                 var ch = Read();
-                if (ch == null) return null;
                 result += ch;
             }
             return result;
@@ -122,7 +119,6 @@ namespace ParserToolkit
             while (!IsEndOfFile())
             {
                 var c = Read();
-                if (c == null) return null;
 
                 if (escaped)
                 {
@@ -162,23 +158,51 @@ namespace ParserToolkit
 
         protected char Peek()
         {
-            return (char)_reader.Peek();
+            if (Position < _input.Length)
+            {
+                return _input[Position];
+            }
+            else
+            {
+                return '\0';
+            }
+        }
+
+        protected char[] Peek(int lookahead)
+        {
+            if (lookahead < 1)
+            {
+                throw new Exception($"'{nameof(lookahead)}' should be greater than 0.");
+            }
+            var list = new List<char>();
+            for (int i = 0; i < lookahead; i++)
+            {
+                var pos = Position + i;
+                if (pos < _input.Length)
+                {
+                    list.Add(_input[pos]);
+                }
+                else
+                {
+                    list.Add('\0');
+                    break;
+                }
+            }
+            return list.ToArray();
         }
 
         // Next
         // Advance
         // Consume
-        protected char? Read()
+        protected char Read()
         {
-            var value = _reader.Read();
+            var value = Peek();
             Position++;
+            Value = value;
+            if (value == '\0')
+                return '\0';
 
-            if (value == -1)
-                return null;
-
-            var ch = (char)value;
-
-            if (ch == '\n')
+            if (value == '\n')
             {
                 Line++;
                 Column = 0;
@@ -187,19 +211,65 @@ namespace ParserToolkit
             {
                 Column++;
             }
-            return ch;
+            return value;
+        }
+
+        protected char[] Read(int lookahead)
+        {
+            if (lookahead < 1)
+            {
+                throw new Exception($"'{nameof(lookahead)}' should be greater than 0.");
+            }
+            var list = new List<char>();
+            for (int i = 0; i < lookahead; i++)
+            {
+                var value = Peek();
+                Position++;
+                Value = value;
+                list.Add(value);
+
+                if (value == '\0')
+                {
+                    break;
+                }
+
+                if (value == '\n')
+                {
+                    Line++;
+                    Column = 0;
+                }
+                else
+                {
+                    Column++;
+                }
+            }
+            return list.ToArray();
         }
 
         // EOF
         protected bool IsEndOfFile()
         {
-            // == "";
-            return _reader.Peek() == -1;
+            return Position >= _input.Length || Value == '\0';
+        }
+
+        protected string PeekAsString()
+        {
+            return Peek().ToString();
+        }
+
+        protected string PeekAsString(int lookahead)
+        {
+            return new string(Peek(lookahead));
         }
 
         protected string ReadAsString()
         {
             return Read().ToString();
+        }
+
+        protected string ReadAsString(int lookahead)
+        {
+            return new string(Read(lookahead));
         }
 
         protected void Skip()
