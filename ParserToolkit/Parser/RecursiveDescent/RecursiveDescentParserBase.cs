@@ -17,7 +17,7 @@ namespace ParserToolkit.RecursiveDescent
 
         protected RecursiveDescentParserBase(LexerResult<TToken> lexerResult)
         {
-            if (lexerResult.Tokens == null || !lexerResult.Tokens.Any())
+            if (lexerResult.Tokens == null || lexerResult.Tokens.Count == 0)
             {
                 throw new Exception("The lexer result has no token.");
             }

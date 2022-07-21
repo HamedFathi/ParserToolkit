@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -11,6 +10,7 @@ namespace ParserToolkit
 {
     public abstract class LexerBase<TToken> where TToken : Enum
     {
+        private const char EOF = '\0';
         private readonly string _input;
         private readonly List<Token<TToken>> _tokens = new List<Token<TToken>>();
         private readonly IList<string> _errors = new List<string>();
@@ -164,7 +164,7 @@ namespace ParserToolkit
             }
             else
             {
-                return '\0';
+                return EOF;
             }
         }
 
@@ -184,7 +184,7 @@ namespace ParserToolkit
                 }
                 else
                 {
-                    list.Add('\0');
+                    list.Add(EOF);
                     break;
                 }
             }
@@ -199,8 +199,8 @@ namespace ParserToolkit
             var value = Peek();
             Position++;
             Value = value;
-            if (value == '\0')
-                return '\0';
+            if (value == EOF)
+                return EOF;
 
             if (value == '\n')
             {
@@ -228,7 +228,7 @@ namespace ParserToolkit
                 Value = value;
                 list.Add(value);
 
-                if (value == '\0')
+                if (value == EOF)
                 {
                     break;
                 }
@@ -249,7 +249,11 @@ namespace ParserToolkit
         // EOF
         protected bool IsEndOfFile()
         {
-            return Position >= _input.Length || Value == '\0';
+            return Position >= _input.Length || Value == EOF;
+        }
+        protected bool IsEndOfFile(char ch)
+        {
+            return ch == EOF;
         }
 
         protected string PeekAsString()
