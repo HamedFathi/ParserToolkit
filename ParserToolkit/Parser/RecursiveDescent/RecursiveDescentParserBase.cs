@@ -12,8 +12,10 @@ namespace ParserToolkit.RecursiveDescent
         where TToken : Enum
         where TResult : class, new()
     {
+        private readonly IList<Token<TToken>> _tokensList = new List<Token<TToken>>();
         private readonly IEnumerator<Token<TToken>> _tokens;
         private readonly IList<string> _errors = new List<string>();
+        private int _position = -1;
 
         protected RecursiveDescentParserBase(LexerResult<TToken> lexerResult)
         {
@@ -24,8 +26,10 @@ namespace ParserToolkit.RecursiveDescent
 
             // Iterates through our tokens (collection).
             _tokens = lexerResult.Tokens.GetEnumerator();
+            _tokensList = lexerResult.Tokens;
 
             // To Start tokens processing, now 'Peek()' has a value and IEnumerator's Current is not null.
+            _position = 0;
             Read();
         }
 
@@ -34,18 +38,10 @@ namespace ParserToolkit.RecursiveDescent
         public ParserResult<TResult> Parse()
         {
             var result = Process();
-            if (_errors.Any())
-            {
-                return new ParserResult<TResult>
-                {
-                    Errors = _errors,
-                    Result = null
-                };
-            }
 
             return new ParserResult<TResult>
             {
-                Errors = null,
+                Errors = _errors.Count > 0 ? _errors : null,
                 Result = result
             };
 
@@ -68,14 +64,47 @@ namespace ParserToolkit.RecursiveDescent
             _errors.Add(error);
         }
 
-        protected bool Read()
+        protected Token<TToken> Read()
         {
-            return _tokens.MoveNext();
+            var result = _tokens.MoveNext();
+            if (result)
+            {
+                _position++;
+                return Peek();
+            }
+            return null;
         }
 
         protected Token<TToken> Peek()
         {
             return _tokens.Current;
+        }
+
+        protected Token<TToken>[] Peek(int lookahead)
+        {
+            if (lookahead < 1)
+            {
+                throw new Exception($"'{nameof(lookahead)}' should be greater than 0.");
+            }
+            var result = new List<Token<TToken>>();
+            for (int i = 0; i < lookahead; i++)
+            {
+                result.Add(_tokensList[i + _position]);
+            }
+            return result.ToArray();
+        }
+        protected Token<TToken>[] Read(int lookahead)
+        {
+            if (lookahead < 1)
+            {
+                throw new Exception($"'{nameof(lookahead)}' should be greater than 0.");
+            }
+            var result = new List<Token<TToken>>();
+            for (int i = 0; i < lookahead; i++)
+            {
+                result.Add(Read());
+            }
+            return result.ToArray();
         }
 
         protected bool IsEndOfInput()
@@ -89,10 +118,19 @@ namespace ParserToolkit.RecursiveDescent
             Read();
         }
 
-        protected void Read<T>(Func<T> func)
+        protected T[] ReadWhile<T>(Func<T, bool> predicate) where T : Token<TToken>
         {
-            var status = Read();
-            if (!status) func();
+            var result = new List<T>();
+            while (!IsEndOfInput() && predicate((T)Peek()))
+            {
+                result.Add((T)Read());
+            }
+            return result.ToArray();
+        }
+
+        protected void SkipWhile<T>(Func<T, bool> predicate) where T : Token<TToken>
+        {
+            ReadWhile(predicate);
         }
 
         protected virtual string Error(Token<TToken> currentToken, string expected, string message = "")
@@ -107,7 +145,7 @@ namespace ParserToolkit.RecursiveDescent
             return !IsEndOfInput() && tokenType.Equals(Peek().Type);
         }
 
-        protected bool IsMatchOneOf(params TToken[] tokenTypes)
+        protected bool IsMatch(params TToken[] tokenTypes)
         {
             return !IsEndOfInput() && tokenTypes.Select(item => item.Equals(Peek().Type)).FirstOrDefault();
         }
@@ -121,13 +159,14 @@ namespace ParserToolkit.RecursiveDescent
             return false;
         }
 
-        protected bool IsMatchOneOf(bool ignoreCase = false, params string[] values)
+        protected bool IsMatch(bool ignoreCase = false, params string[] values)
         {
+            if (IsEndOfInput()) return false;
             if (ignoreCase)
             {
                 return values.Select(item => string.Equals(item, Peek().Value, StringComparison.OrdinalIgnoreCase)).Any();
             }
-            return !IsEndOfInput() && values.Select(item => item == Peek().Value).Any();
+            return values.Select(item => item == Peek().Value).Any();
         }
     }
 }
