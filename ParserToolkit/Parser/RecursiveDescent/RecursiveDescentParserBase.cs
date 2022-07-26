@@ -12,10 +12,9 @@ namespace ParserToolkit.RecursiveDescent
         where TToken : Enum
         where TResult : class, new()
     {
-        private readonly IList<Token<TToken>> _tokensList = new List<Token<TToken>>();
-        private readonly IEnumerator<Token<TToken>> _tokens;
+        private readonly IList<Token<TToken>> _tokens = new List<Token<TToken>>();
         private readonly IList<string> _errors = new List<string>();
-        private int _position = -1;
+        private int _position;
 
         protected RecursiveDescentParserBase(LexerResult<TToken> lexerResult)
         {
@@ -25,12 +24,8 @@ namespace ParserToolkit.RecursiveDescent
             }
 
             // Iterates through our tokens (collection).
-            _tokens = lexerResult.Tokens.GetEnumerator();
-            _tokensList = lexerResult.Tokens;
-
-            // To Start tokens processing, now 'Peek()' has a value and IEnumerator's Current is not null.
+            _tokens = lexerResult.Tokens;
             _position = 0;
-            Read();
         }
 
         protected abstract TResult Process();
@@ -53,12 +48,12 @@ namespace ParserToolkit.RecursiveDescent
                 throw new ArgumentNullException($"'{nameof(currentToken)}' argument is null.");
 
 
-            if (string.IsNullOrEmpty(expected))
+            if (string.IsNullOrWhiteSpace(expected))
                 throw new ArgumentNullException($"'{nameof(expected)}' argument is null or empty.");
 
             var error = Error(currentToken, expected, message);
 
-            if (string.IsNullOrEmpty(error))
+            if (string.IsNullOrWhiteSpace(error))
                 throw new ArgumentNullException("The 'Error()' function has returned null or empty.");
 
             _errors.Add(error);
@@ -66,18 +61,21 @@ namespace ParserToolkit.RecursiveDescent
 
         protected Token<TToken> Read()
         {
-            var result = _tokens.MoveNext();
-            if (result)
+            if (!IsEndOfInput())
             {
+                var result = Peek();
                 _position++;
-                return Peek();
+                return result;
             }
             return null;
         }
 
         protected Token<TToken> Peek()
         {
-            return _tokens.Current;
+            if (!IsEndOfInput())
+                return _tokens[_position];
+            else
+                return null;
         }
 
         protected Token<TToken>[] Peek(int lookahead)
@@ -86,10 +84,16 @@ namespace ParserToolkit.RecursiveDescent
             {
                 throw new Exception($"'{nameof(lookahead)}' should be greater than 0.");
             }
+
+            if (_tokens.Count - 1 < _position + lookahead)
+            {
+                throw new Exception($"'{nameof(lookahead)}' is bigger than the remaining tokens.");
+            }
+
             var result = new List<Token<TToken>>();
             for (int i = 0; i < lookahead; i++)
             {
-                result.Add(_tokensList[i + _position]);
+                result.Add(_tokens[i + _position]);
             }
             return result.ToArray();
         }
@@ -99,6 +103,12 @@ namespace ParserToolkit.RecursiveDescent
             {
                 throw new Exception($"'{nameof(lookahead)}' should be greater than 0.");
             }
+
+            if (_tokens.Count - 1 < _position + lookahead)
+            {
+                throw new Exception($"'{nameof(lookahead)}' is bigger than the remaining tokens.");
+            }
+
             var result = new List<Token<TToken>>();
             for (int i = 0; i < lookahead; i++)
             {
@@ -109,7 +119,7 @@ namespace ParserToolkit.RecursiveDescent
 
         protected bool IsEndOfInput()
         {
-            return _tokens.Current == null;
+            return _tokens.Count - 1 < _position;
         }
 
         // More functionality
@@ -137,7 +147,7 @@ namespace ParserToolkit.RecursiveDescent
         {
             return
                     $"Expecting '{expected}' but got '{currentToken.Value}' ({currentToken.Position.Line}:{currentToken.Position.Column})"
-                    + (string.IsNullOrEmpty(message) ? "" : Environment.NewLine + message);
+                    + (string.IsNullOrWhiteSpace(message) ? "" : Environment.NewLine + message);
         }
 
         protected bool IsMatch(TToken tokenType)

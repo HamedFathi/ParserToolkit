@@ -53,12 +53,12 @@ namespace ParserToolkit
                 throw new ArgumentNullException($"'{nameof(currentToken)}' argument is null.");
 
 
-            if (string.IsNullOrEmpty(expected))
+            if (string.IsNullOrWhiteSpace(expected))
                 throw new ArgumentNullException($"'{nameof(expected)}' argument is null or empty.");
 
             var error = Error(currentToken, expected, message);
 
-            if (string.IsNullOrEmpty(error))
+            if (string.IsNullOrWhiteSpace(error))
                 throw new ArgumentNullException($"The 'Error()' function has returned null or empty.");
 
             _errors.Add(error);
@@ -68,7 +68,7 @@ namespace ParserToolkit
         {
             return
                 $"Expecting '{expected}' but got '{currentToken.Value}' ({currentToken.Position.Line}:{currentToken.Position.Column})"
-                + (string.IsNullOrEmpty(message) ? "" : Environment.NewLine + message);
+                + (string.IsNullOrWhiteSpace(message) ? "" : Environment.NewLine + message);
         }
 
         protected bool IsMatch(char ch)
