@@ -58,13 +58,13 @@ namespace ParserToolkit.RecursiveDescent
 
             _errors.Add(error);
         }
-
         protected Token<TToken> Read()
         {
             if (!IsEndOfInput())
             {
                 var result = Peek();
                 _position++;
+                Visit(result);
                 return result;
             }
             return null;
@@ -148,6 +148,19 @@ namespace ParserToolkit.RecursiveDescent
             return
                     $"Expecting '{expected}' but got '{currentToken.Value}' ({currentToken.Position.Line}:{currentToken.Position.Column})"
                     + (string.IsNullOrWhiteSpace(message) ? "" : Environment.NewLine + message);
+        }
+
+        protected virtual void Visit(Token<TToken> currentToken)
+        {
+
+        }
+
+        protected void Traverse(Action<Token<TToken>> action)
+        {
+            foreach (var token in _tokens)
+            {
+                action(token);
+            }
         }
 
         protected bool IsMatch(TToken tokenType)

@@ -5,7 +5,7 @@
     <Authors>Hamed Fathi</Authors>
     <Company />
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <PackageProjectUrl>https://github.com/HamedFathi/ParserToolkit</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HamedFathi/ParserToolkit</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
