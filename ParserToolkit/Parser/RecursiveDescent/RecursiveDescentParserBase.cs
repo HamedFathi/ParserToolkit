@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ParserToolkit.Lexer;
 
 // ReSharper disable NotResolvedInText
 // ReSharper disable CollectionNeverQueried.Local
 // ReSharper disable UnusedMember.Global
 
-namespace ParserToolkit.RecursiveDescent
+namespace ParserToolkit.Parser.RecursiveDescent
 {
     public abstract class RecursiveDescentParserBase<TToken, TResult>
         where TToken : Enum
         where TResult : class, new()
     {
-        private readonly IList<Token<TToken>> _tokens = new List<Token<TToken>>();
+        private readonly IList<Token<TToken>> _tokens;
         private readonly IList<string> _errors = new List<string>();
         private int _position;
 
@@ -115,6 +116,43 @@ namespace ParserToolkit.RecursiveDescent
                 result.Add(Read());
             }
             return result.ToArray();
+        }
+
+        protected Token<TToken> Expect(Token<TToken> token, bool ignoreCase = false)
+        {
+            var current = Peek();
+            if (ignoreCase)
+            {
+                if (!string.Equals(token.Value, current.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"Expected '{token.Value}' but got '{current.Value}' at position {_position}.");
+                }
+            }
+            else if (!string.Equals(token.Value, current.Value))
+            {
+                throw new Exception($"Expected '{token.Value}' but got '{current.Value}' at position {_position}.");
+            }
+
+            return Read();
+        }
+
+        protected bool Read(Token<TToken> token, bool ignoreCase = false)
+        {
+            var current = Peek();
+            if (ignoreCase)
+            {
+                if (!string.Equals(token.Value, current.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+            else if (!string.Equals(token.Value, current.Value))
+            {
+                return false;
+            }
+
+            Read();
+            return true;
         }
 
         protected bool IsEndOfInput()

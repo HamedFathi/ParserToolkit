@@ -2,7 +2,7 @@
 
 // ReSharper disable UnusedMember.Global
 
-namespace ParserToolkit
+namespace ParserToolkit.Lexer
 {
     // The Enum constraint is available in C# 7.3
     public class Token<TToken> where TToken : Enum

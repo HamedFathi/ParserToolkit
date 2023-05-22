@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 // ReSharper disable RedundantDefaultMemberInitializer
 // ReSharper disable UnusedMember.Global
 
-namespace ParserToolkit
+namespace ParserToolkit.Lexer
 {
     public abstract class LexerBase<TToken> where TToken : Enum
     {
@@ -212,6 +212,41 @@ namespace ParserToolkit
                 Column++;
             }
             return value;
+        }
+
+        protected char Expect(char c, bool ignoreCase = false)
+        {
+            var value = Peek();
+
+            if (ignoreCase)
+            {
+                if (char.ToLowerInvariant(value) != char.ToLowerInvariant(c))
+                    throw new Exception($"Expected '{c}' but got '{value}' at position {Position}.");
+            }
+            else
+            {
+                if (value != c)
+                    throw new Exception($"Expected '{c}' but got '{value}' at position {Position}.");
+            }
+            return Read();
+
+        }
+
+        protected bool Read(char c, bool ignoreCase = false)
+        {
+            var value = Peek();
+
+            if (ignoreCase)
+            {
+                if (char.ToLowerInvariant(value) != char.ToLowerInvariant(c))
+                    return false;
+            }
+            else if (value != c)
+                return false;
+
+            Read();
+            return true;
+
         }
 
         protected char[] Read(int lookahead)

@@ -2,7 +2,7 @@
 
 // ReSharper disable UnusedMember.Global
 
-namespace ParserToolkit.RecursiveDescent
+namespace ParserToolkit.Parser.RecursiveDescent
 {
     public class ParserResult<TResult> where TResult : class, new()
     {

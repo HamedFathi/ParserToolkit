@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ParserToolkit
+namespace ParserToolkit.Lexer
 {
     public sealed class LexerResult<TToken>
         where TToken : Enum
